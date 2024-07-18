@@ -67,13 +67,18 @@ class MyApp(QWidget):
         response = requests.get('http://192.168.0.163:8000')
         print(response.status_code)
         print(response.content)
-        self.ans.setText(f"{response.content}")
         f = json.loads(response.content)
-        with open('file.txt', 'w') as file:
+        import xlsxwriter
+        workbook = xlsxwriter.Workbook('hello.xlsx')
+        worksheet = workbook.add_worksheet()
+        worksheet.write('A1', 'Hello world')
+        k = 0
+        for i in f.keys():
+            worksheet.write(k, 0, f[i])
+            worksheet.write(k, 1, i)
+            k += 1
 
-            for i in f.keys():
-                print(i, "=", f[i])
-                file.write(f"{f[i]}  ---  {i}\n")
+        workbook.close()
 
 
 if __name__ == '__main__':
