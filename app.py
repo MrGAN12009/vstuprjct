@@ -2,13 +2,57 @@ import sys
 import requests
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox,
-    QStackedWidget, QScrollArea, QFrame, QMainWindow
+    QStackedWidget, QScrollArea, QMainWindow
 )
-from PyQt5.QtGui import QPalette, QColor, QBrush, QLinearGradient
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPalette, QColor, QBrush, QLinearGradient, QPainterPath, QPainter
+from PyQt5.QtCore import Qt, QRectF
 
 username = ''
 jwt_token = ''
+
+class GradientWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAutoFillBackground(True)
+        self.setPalette(QPalette(QColor(53, 53, 53)))
+        self.gradient = QLinearGradient(0, 0, 0, self.height())
+        self.gradient.setColorAt(0, QColor(25, 25, 25))
+        self.gradient.setColorAt(1, QColor(53, 53, 53))
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setBrush(QBrush(self.gradient))
+        painter.drawRect(self.rect())
+
+class RoundedButton(QPushButton):
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+        self.setStyleSheet("""
+            QPushButton {
+                background-color: #424242;
+                border: 2px solid #616161;
+                border-radius: 10px;
+                padding: 10px;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:pressed {
+                background-color: #616161;
+            }
+        """)
+
+class RoundedLineEdit(QLineEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet("""
+            QLineEdit {
+                border: 2px solid #616161;
+                border-radius: 10px;
+                padding: 10px;
+                background-color: #333;
+                color: white;
+            }
+        """)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -24,6 +68,7 @@ class MainWindow(QMainWindow):
         self.login_form = LoginForm(self)
         self.register_form = RegisterForm(self)
         self.main_menu = MainMenu(self)
+        self.add_work_window = None  # To manage dynamic creation of "Add Work" screen
         self.all_works_window = None  # To manage dynamic creation of "All works" screen
 
         # Add screens to stacked widget
@@ -49,30 +94,40 @@ class MainWindow(QMainWindow):
             self.stacked_widget.addWidget(self.all_works_window)
         self.stacked_widget.setCurrentWidget(self.all_works_window)
 
+    def show_add_work(self):
+        if self.add_work_window is None:
+            self.add_work_window = AddWorkWindow(self)
+            self.stacked_widget.addWidget(self.add_work_window)
+        self.stacked_widget.setCurrentWidget(self.add_work_window)
+
     def go_back_to_main_menu(self):
         self.stacked_widget.setCurrentWidget(self.main_menu)
         if self.all_works_window is not None:
             self.stacked_widget.removeWidget(self.all_works_window)
             self.all_works_window.deleteLater()  # Ensures proper memory management
             self.all_works_window = None
+        if self.add_work_window is not None:
+            self.stacked_widget.removeWidget(self.add_work_window)
+            self.add_work_window.deleteLater()  # Ensures proper memory management
+            self.add_work_window = None
 
-class LoginForm(QWidget):
+class LoginForm(GradientWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
 
         layout = QVBoxLayout()
-        self.username_input = QLineEdit(self)
+        self.username_input = RoundedLineEdit(self)
         self.username_input.setPlaceholderText('Username')
 
-        self.password_input = QLineEdit(self)
+        self.password_input = RoundedLineEdit(self)
         self.password_input.setPlaceholderText('Password')
         self.password_input.setEchoMode(QLineEdit.Password)
 
-        self.login_button = QPushButton('Login', self)
+        self.login_button = RoundedButton('Login', self)
         self.login_button.clicked.connect(self.handle_login)
 
-        self.register_button = QPushButton('Register', self)
+        self.register_button = RoundedButton('Register', self)
         self.register_button.clicked.connect(self.main_window.switch_to_register)
 
         layout.addWidget(self.username_input)
@@ -87,7 +142,7 @@ class LoginForm(QWidget):
         password = self.password_input.text()
         data = {'username': username, 'password': password}
         try:
-            response = requests.post('http://192.168.0.163:8000/login', data=data)
+            response = requests.post('http://185.180.109.43:8000/login', json=data)
             if response.status_code == 200:
                 jwt_token = response.content.decode("utf-8")
                 self.main_window.switch_to_main_menu()
@@ -96,26 +151,26 @@ class LoginForm(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {e}")
 
-class RegisterForm(QWidget):
+class RegisterForm(GradientWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
 
         layout = QVBoxLayout()
-        self.username_input = QLineEdit(self)
+        self.username_input = RoundedLineEdit(self)
         self.username_input.setPlaceholderText('Username')
 
-        self.password_input = QLineEdit(self)
+        self.password_input = RoundedLineEdit(self)
         self.password_input.setPlaceholderText('Password')
         self.password_input.setEchoMode(QLineEdit.Password)
 
-        self.key_input = QLineEdit(self)
+        self.key_input = RoundedLineEdit(self)
         self.key_input.setPlaceholderText('Unique Access Key')
 
-        self.register_button = QPushButton('Register', self)
+        self.register_button = RoundedButton('Register', self)
         self.register_button.clicked.connect(self.handle_register)
 
-        self.back_button = QPushButton('Back to Login', self)
+        self.back_button = RoundedButton('Back to Login', self)
         self.back_button.clicked.connect(self.main_window.switch_to_login)
 
         layout.addWidget(self.username_input)
@@ -132,7 +187,7 @@ class RegisterForm(QWidget):
 
         data = {'username': username, 'password': password, 'access_key': access_key}
         try:
-            response = requests.post('http://192.168.0.163:8000/register', data=data)
+            response = requests.post('http://185.180.109.43:8000/register', json=data)
             if response.status_code == 200:
                 QMessageBox.information(self, "Success", "Registration successful!")
                 self.main_window.switch_to_login()
@@ -141,7 +196,7 @@ class RegisterForm(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {e}")
 
-class MainMenu(QWidget):
+class MainMenu(GradientWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
@@ -149,19 +204,20 @@ class MainMenu(QWidget):
         layout = QVBoxLayout()
         buttons = [
             ('Все работы', self.main_window.show_all_works),
+            ('Добавить работу', self.main_window.show_add_work),
             ('Выложенные мной работы', lambda: QMessageBox.information(self, "Info", "Not implemented yet")),
             ('Купленные работы', lambda: QMessageBox.information(self, "Info", "Not implemented yet")),
             ('Профиль', lambda: QMessageBox.information(self, "Info", "Not implemented yet")),
         ]
 
         for text, handler in buttons:
-            button = QPushButton(text, self)
+            button = RoundedButton(text, self)
             button.clicked.connect(handler)
             layout.addWidget(button)
 
         self.setLayout(layout)
 
-class AllWorksWindow(QWidget):
+class AllWorksWindow(GradientWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
@@ -176,7 +232,7 @@ class AllWorksWindow(QWidget):
 
         layout.addWidget(self.scroll_area)
 
-        back_button = QPushButton('Назад', self)
+        back_button = RoundedButton('Назад', self)
         back_button.clicked.connect(self.main_window.go_back_to_main_menu)
         layout.addWidget(back_button)
 
@@ -190,11 +246,11 @@ class AllWorksWindow(QWidget):
                 'Authorization': f'{jwt_token}',
                 'username': username
             }
-            response = requests.get('http://192.168.0.163:8000/free_works', headers=headers)
+            response = requests.get('http://185.180.109.43:8000/free_works', headers=headers)
             if response.status_code == 200:
                 works = response.json().get("data", [])
                 for work in works:
-                    button = QPushButton(work['title'], self)
+                    button = RoundedButton(work['title'], self)
                     button.clicked.connect(lambda _, w=work: self.show_work_details(w))
                     self.scroll_area_content_layout.addWidget(button)
             else:
@@ -207,7 +263,7 @@ class AllWorksWindow(QWidget):
         self.main_window.stacked_widget.addWidget(details_window)
         self.main_window.stacked_widget.setCurrentWidget(details_window)
 
-class WorkDetailsWindow(QWidget):
+class WorkDetailsWindow(GradientWidget):
     def __init__(self, work, main_window):
         super().__init__()
         self.work = work
@@ -217,7 +273,7 @@ class WorkDetailsWindow(QWidget):
         title_label = QLabel(self.work['title'], self)
         description_label = QLabel(self.work['text'], self)
 
-        back_button = QPushButton('Назад', self)
+        back_button = RoundedButton('Назад', self)
         back_button.clicked.connect(self.go_back)
 
         layout.addWidget(title_label)
@@ -229,6 +285,90 @@ class WorkDetailsWindow(QWidget):
         self.main_window.stacked_widget.removeWidget(self)
         self.deleteLater()  # Ensures proper memory management
         self.main_window.show_all_works()
+
+class AddWorkWindow(GradientWidget):
+    def __init__(self, main_window):
+        super().__init__()
+        self.main_window = main_window
+
+        layout = QVBoxLayout()
+
+        # Поля для ввода данных
+        self.title_input = RoundedLineEdit(self)
+        self.title_input.setPlaceholderText('Title (макс. 45 символов)')
+        self.title_input.setMaxLength(45)
+
+        self.for_teacher_input = RoundedLineEdit(self)
+        self.for_teacher_input.setPlaceholderText('For Teacher (макс. 45 символов)')
+        self.for_teacher_input.setMaxLength(45)
+
+        self.course_input = RoundedLineEdit(self)
+        self.course_input.setPlaceholderText('Course (число)')
+
+        self.predmet_input = RoundedLineEdit(self)
+        self.predmet_input.setPlaceholderText('Predmet (макс. 45 символов)')
+        self.predmet_input.setMaxLength(45)
+
+        self.grade_input = RoundedLineEdit(self)
+        self.grade_input.setPlaceholderText('Grade (число)')
+
+        self.is_free_checkbox = RoundedButton('Is Free (Нажмите, если бесплатно)', self)
+        self.is_free_checkbox.setCheckable(True)
+
+        self.text_input = RoundedLineEdit(self)
+        self.text_input.setPlaceholderText('Text (макс. 500 символов)')
+        self.text_input.setMaxLength(500)
+
+        # Кнопка для отправки данных
+        self.submit_button = RoundedButton('Submit', self)
+        self.submit_button.clicked.connect(self.submit_work)
+
+        # Кнопка для возврата назад
+        self.back_button = RoundedButton('Назад', self)
+        self.back_button.clicked.connect(self.main_window.go_back_to_main_menu)
+
+        # Добавление всех элементов на макет
+        layout.addWidget(self.title_input)
+        layout.addWidget(self.for_teacher_input)
+        layout.addWidget(self.course_input)
+        layout.addWidget(self.predmet_input)
+        layout.addWidget(self.grade_input)
+        layout.addWidget(self.is_free_checkbox)
+        layout.addWidget(self.text_input)
+        layout.addWidget(self.submit_button)
+        layout.addWidget(self.back_button)
+        self.setLayout(layout)
+
+    def submit_work(self):
+        title = self.title_input.text()
+        for_teacher = self.for_teacher_input.text()
+        course = self.course_input.text()
+        predmet = self.predmet_input.text()
+        grade = self.grade_input.text()
+        is_free = self.is_free_checkbox.isChecked()
+        text = self.text_input.text()
+
+        data = {
+            'username': username,
+            'title': title,
+            'forTeacher': for_teacher,
+            'course': int(course) if course.isdigit() else 1,
+            'predmet': predmet,
+            'isFree': is_free,
+            'grade': int(grade) if grade.isdigit() else 1,
+            'text': text
+        }
+
+        try:
+            headers = {'Authorization': f'{jwt_token}', 'username': username}
+            response = requests.post('http://185.180.109.43:8000/new_work', json=data, headers=headers)
+            if response.status_code == 200:
+                QMessageBox.information(self, "Success", "Work added successfully!")
+                self.main_window.go_back_to_main_menu()
+            else:
+                QMessageBox.warning(self, "Error", "Failed to add work.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {e}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -72,6 +72,16 @@ def oneWork(username, title):
     return sql.fetchone()
 
 
+ # data = {'username', 'title', 'forTeacher', 'course', 'predmet', 'isFree', 'grade', 'text'}
+def new_work(username, title, forTeacher, course, predmet, isFree, grade, text):
+    try:
+        sql.execute(f"INSERT INTO works(username, title, forTeacher, course, predmet, isFree, grade, text) VALUES('{username}', '{title}', '{forTeacher}', '{course}', '{predmet}', '{isFree}', '{grade}', '{text}')")
+    except BaseException:
+        return False
+    else:
+        db.commit()
+        return True
+
 #jwt
 # Секретный ключ для подписи токенов
 SECRET_KEY = 'piska_mamonta_ebiot_tvoyu_mamu'
@@ -164,37 +174,21 @@ class HttpGetHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(b'')
 
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(b'Hello, world!')
-
-
-
-        # self.send_response(200)
-        # self.send_header("Content-type", "text/html")
-        # self.end_headers()
-        # data = {}
-        # for i in select_all():
-        #     data[str(i).split(",")[1].strip()[:-1]] = str(i).split("'")[1]
-        # self.wfile.write(json.dumps(data).encode())
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
-        post_data_arr = [i for i in str(post_data)[2:-1].split('&')]
+        json_data = json.loads(post_data)
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
 
 
         if path == '/login':
-            username = post_data_arr[0].split('=')[1]
-            password = post_data_arr[1].split('=')[1]
-            if login(username, password) == True:
+            if login(json_data['username'], json_data['password']) == True:
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                response = create_token(username)
+                response = create_token(json_data['username'])
                 self.wfile.write(response.encode('utf-8'))
             else:
                 self.send_response(400)
@@ -205,10 +199,7 @@ class HttpGetHandler(BaseHTTPRequestHandler):
 
         #data = {'username': username, 'password': password, 'access_key': access_key}
         elif path == '/register':
-            username = post_data_arr[0].split('=')[1]
-            password = post_data_arr[1].split('=')[1]
-            key = post_data_arr[2].split('=')[1]
-            if register(username, password, key) == True:
+            if register(json_data['username'], json_data['password'], json_data['access_key']) == True:
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
@@ -220,6 +211,32 @@ class HttpGetHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 response = "Пошёл нахуй отсюда"
                 self.wfile.write(response.encode('utf-8'))
+
+
+        # data = {'username', 'title', 'forTeacher', 'course', 'predmet', 'isFree', 'grade', 'text'}
+        elif path == '/new_work':
+            authorization_token = self.headers.get('Authorization')
+            authorization_name = self.headers.get('username')
+            if authorization_token and decode_token(authorization_token)['user_id'] == authorization_name:
+                if new_work(json_data['username'], json_data['title'], json_data['forTeacher'], json_data['course'], json_data['predmet'], json_data['isFree'], json_data['grade'], json_data['text']) == True:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    response = 'sex'
+                    self.wfile.write(response.encode('utf-8'))
+                else:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    response = "Пошёл нахуй отсюда"
+                    self.wfile.write(response.encode('utf-8'))
+            else:
+                self.send_response(400)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                response = "Пошёл нахуй отсюда"
+                self.wfile.write(response.encode('utf-8'))
+
 
 
 

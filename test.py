@@ -18,3 +18,7 @@
 # response = requests.post('http://192.168.0.163:8000/login', data=data)
 # jwt_token = response.content.decode("utf-8")
 # print(jwt_token)
+
+import requests
+response = requests.get("http://185.180.109.43:8000")
+print(response.status_code)
