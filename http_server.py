@@ -67,6 +67,11 @@ def freeWorks():
     return data
 
 
+def oneWork(username, title):
+    sql.execute(f"SELECT * FROM works WHERE username = '{username}' and title = '{title}'")
+    return sql.fetchone()
+
+
 #jwt
 # Секретный ключ для подписи токенов
 SECRET_KEY = 'piska_mamonta_ebiot_tvoyu_mamu'
@@ -123,6 +128,29 @@ class HttpGetHandler(BaseHTTPRequestHandler):
                 response = {
                     "status": "success",
                     "data": freeWorks()
+                }
+                response_json = json.dumps(response)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(response_json.encode('utf-8'))
+            else:
+                self.send_response(410)
+                #410 = no jwt token
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(b'')
+
+
+        elif path == '/work':
+            authorization_token = self.headers.get('Authorization')
+            authorization_name = self.headers.get('username')
+            req_username = self.headers.get('ruser')
+            req_title = self.headers.get('rtitle')
+            if authorization_token and decode_token(authorization_token)['user_id'] == authorization_name:
+                response = {
+                    "status": "success",
+                    "data": oneWork(req_username, req_title)
                 }
                 response_json = json.dumps(response)
                 self.send_response(200)

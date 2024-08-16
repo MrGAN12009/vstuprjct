@@ -1,24 +1,27 @@
 import sys
 import requests
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox, QStackedLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox, QStackedLayout, QScrollArea, QFrame
 from PyQt5.QtGui import QPalette, QColor, QBrush, QLinearGradient
 from PyQt5.QtCore import Qt
+username = ''
+jwt_token = ''
+
 
 class LoginRegisterWindow(QWidget):
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Login/Register')
         self.setFixedSize(400, 400)
 
-        # Set the background gradient
         self.gradient_background()
 
         self.stacked_layout = QStackedLayout()
 
-        # Create login and registration forms
         self.login_form = self.create_login_form()
         self.register_form = self.create_register_form()
         self.main_menu = self.create_main_menu()
+        self.all_works_window = None
 
         self.stacked_layout.addWidget(self.login_form)
         self.stacked_layout.addWidget(self.register_form)
@@ -28,8 +31,8 @@ class LoginRegisterWindow(QWidget):
 
     def gradient_background(self):
         gradient = QLinearGradient(0, 0, 1, 1)
-        gradient.setColorAt(0, QColor(34, 34, 34))  # Darker color
-        gradient.setColorAt(1, QColor(50, 50, 50))  # Lighter color
+        gradient.setColorAt(0, QColor(34, 34, 34))
+        gradient.setColorAt(1, QColor(50, 50, 50))
 
         palette = self.palette()
         palette.setBrush(QPalette.Background, QBrush(gradient))
@@ -139,7 +142,7 @@ class LoginRegisterWindow(QWidget):
         layout = QVBoxLayout()
 
         buttons = [
-            ('Все работы', lambda: self.show_work_window('Все работы')),
+            ('Все работы', self.show_all_works_window),
             ('Выложенные мной работы', lambda: self.show_work_window('Выложенные мной работы')),
             ('Купленные работы', lambda: self.show_work_window('Купленные работы')),
             ('Заказать работу', lambda: self.show_work_window('Заказать работу')),
@@ -156,16 +159,14 @@ class LoginRegisterWindow(QWidget):
         return main_menu
 
     def handle_login(self):
+        global username, jwt_token
         username = self.login_username_input.text()
         password = self.login_password_input.text()
-
         data = {'username': username, 'password': password}
         try:
             response = requests.post('http://192.168.0.163:8000/login', data=data)
             if response.status_code == 200:
-                # Skip the success message and go directly to the main menu
-                self.jwt_token = str(response.content)
-                print(self.jwt_token)
+                jwt_token = jwt_token = response.content.decode("utf-8")
                 self.stacked_layout.setCurrentWidget(self.main_menu)
             else:
                 QMessageBox.warning(self, "Error", "Login failed.")
@@ -194,30 +195,57 @@ class LoginRegisterWindow(QWidget):
     def show_register_form(self):
         self.stacked_layout.setCurrentWidget(self.register_form)
 
+    def show_all_works_window(self):
+        if self.all_works_window is None:
+            self.all_works_window = AllWorksWindow(self.stacked_layout, self.main_menu)
+            self.stacked_layout.addWidget(self.all_works_window)
+        self.stacked_layout.setCurrentWidget(self.all_works_window)
+
     def show_work_window(self, title):
         self.work_window = WorkWindow(title, self.stacked_layout, self.main_menu)
         self.stacked_layout.addWidget(self.work_window)
         self.stacked_layout.setCurrentWidget(self.work_window)
 
 
-class WorkWindow(QWidget):
-    def __init__(self, title, stacked_layout, main_menu):
+class AllWorksWindow(QWidget):
+    def __init__(self, stacked_layout, main_menu):
         super().__init__()
-        self.setWindowTitle(title)
+        self.setWindowTitle('Все работы')
         self.setFixedSize(400, 400)
-        self.gradient_background()
-
         self.stacked_layout = stacked_layout
         self.main_menu = main_menu
+        self.gradient_background()
 
         layout = QVBoxLayout()
 
-        label = QLabel(title, self)
-        label.setStyleSheet("color: white; font-size: 18px;")
-        label.setAlignment(Qt.AlignCenter)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area_content = QWidget()
+        self.scroll_area_content_layout = QVBoxLayout()
+        self.scroll_area_content.setLayout(self.scroll_area_content_layout)
+        self.scroll_area.setWidget(self.scroll_area_content)
 
-        back_button = QPushButton('Назад', self)
-        back_button.setStyleSheet("""
+        layout.addWidget(self.scroll_area)
+
+        back_button = QPushButton('Назад')
+        back_button.setStyleSheet(self.get_button_style())
+        back_button.clicked.connect(self.go_back)
+        layout.addWidget(back_button)
+
+        self.setLayout(layout)
+        self.load_work_buttons()
+
+    def gradient_background(self):
+        gradient = QLinearGradient(0, 0, 1, 1)
+        gradient.setColorAt(0, QColor(34, 34, 34))
+        gradient.setColorAt(1, QColor(50, 50, 50))
+
+        palette = self.palette()
+        palette.setBrush(QPalette.Background, QBrush(gradient))
+        self.setPalette(palette)
+
+    def get_button_style(self):
+        return """
         QPushButton {
             border: none;
             border-radius: 10px;
@@ -232,10 +260,65 @@ class WorkWindow(QWidget):
         QPushButton:pressed {
             background-color: #003F7F;
         }
-        """)
+        """
+
+    def load_work_buttons(self):
+        global username, jwt_token
+        try:
+            headers = {
+                'Authorization': jwt_token,
+                'username': username}
+            response = requests.get('http://192.168.0.163:8000/free_works', headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                works = data.get("data", [])
+                print(works)
+                for work in works:
+                    button = QPushButton(work['title'])
+                    button.setStyleSheet(self.get_button_style())
+                    button.clicked.connect(lambda _, w=work: self.show_work_details(w))
+                    self.scroll_area_content_layout.addWidget(button)
+            else:
+                QMessageBox.warning(self, "Error", "Failed to load works.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred: {e}")
+
+    def show_work_details(self, work):
+        work_details_window = WorkDetailsWindow(work, self.stacked_layout, self)
+        self.stacked_layout.addWidget(work_details_window)
+        self.stacked_layout.setCurrentWidget(work_details_window)
+
+    def go_back(self):
+        self.stacked_layout.setCurrentWidget(self.main_menu)
+        self.stacked_layout.removeWidget(self)
+
+
+class WorkDetailsWindow(QWidget):
+    def __init__(self, work, stacked_layout, parent_window):
+        super().__init__()
+        self.setWindowTitle('Work Details')
+        self.setFixedSize(400, 400)
+        self.work = work
+        self.stacked_layout = stacked_layout
+        self.parent_window = parent_window
+        self.gradient_background()
+
+        layout = QVBoxLayout()
+
+        title_label = QLabel(self.work['title'])
+        title_label.setStyleSheet("color: white; font-size: 18px;")
+        title_label.setAlignment(Qt.AlignCenter)
+
+        description_label = QLabel(self.work['description'])
+        description_label.setStyleSheet("color: white; font-size: 14px;")
+        description_label.setAlignment(Qt.AlignCenter)
+
+        back_button = QPushButton('Назад')
+        back_button.setStyleSheet(self.get_button_style())
         back_button.clicked.connect(self.go_back)
 
-        layout.addWidget(label)
+        layout.addWidget(title_label)
+        layout.addWidget(description_label)
         layout.addWidget(back_button)
 
         self.setLayout(layout)
@@ -249,8 +332,26 @@ class WorkWindow(QWidget):
         palette.setBrush(QPalette.Background, QBrush(gradient))
         self.setPalette(palette)
 
+    def get_button_style(self):
+        return """
+        QPushButton {
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: #007AFF;
+            color: white;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #0051A8;
+        }
+        QPushButton:pressed {
+            background-color: #003F7F;
+        }
+        """
+
     def go_back(self):
-        self.stacked_layout.setCurrentWidget(self.main_menu)
+        self.stacked_layout.setCurrentWidget(self.parent_window)
         self.stacked_layout.removeWidget(self)
 
 
@@ -258,7 +359,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
 
-    # Set up dark theme
     dark_palette = QPalette()
     dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
     dark_palette.setColor(QPalette.WindowText, Qt.white)
