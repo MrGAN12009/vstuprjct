@@ -67,6 +67,41 @@ def freeWorks():
     return data
 
 
+#('username1', 'title1', 'forteacher1', 1, 'prednet1', 1, 91, 'tttetxtitle1')
+def params(forTeacher = '*', course = '*', predmet = '*', isFree = '*', grade = '*'):
+    sql.execute(f"SELECT * FROM works")
+    arr = sql.fetchall()
+    ret = []
+    for i in arr:
+        if forTeacher != '*':
+            if i[2] == forTeacher:
+                pass
+            else:
+                break
+        if course != '*':
+            if i[3] == course:
+                pass
+            else:
+                break
+        if predmet != '*':
+            if i[4] == predmet:
+                pass
+            else:
+                break
+        if isFree != '*':
+            if i[5] == isFree:
+                pass
+            else:
+                break
+        if grade != '*':
+            if i[6] == grade:
+                pass
+            else:
+                break
+        ret.append(i)
+    return ret
+
+
 def oneWork(username, title):
     sql.execute(f"SELECT * FROM works WHERE username = '{username}' and title = '{title}'")
     return sql.fetchone()
@@ -81,6 +116,7 @@ def new_work(username, title, forTeacher, course, predmet, isFree, grade, text):
     else:
         db.commit()
         return True
+
 
 #jwt
 # Секретный ключ для подписи токенов
@@ -138,6 +174,27 @@ class HttpGetHandler(BaseHTTPRequestHandler):
                 response = {
                     "status": "success",
                     "data": freeWorks()
+                }
+                response_json = json.dumps(response)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(response_json.encode('utf-8'))
+            else:
+                self.send_response(410)
+                #410 = no jwt token
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(b'')
+
+
+        elif path == '/params':
+            authorization_token = self.headers.get('Authorization')
+            authorization_name = self.headers.get('username')
+            if authorization_token and decode_token(authorization_token)['user_id'] == authorization_name:
+                response = {
+                    "status": "success",
+                    "data": params(self.headers.get('forTeacher'), self.headers.get('course'), self.headers.get('predmet'), self.headers.get('isFree'), self.headers.get('grade'))
                 }
                 response_json = json.dumps(response)
                 self.send_response(200)

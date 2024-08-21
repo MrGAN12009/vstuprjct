@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="988d1931-cfc2-494e-80a1-b4b095d58388" name="Changes" comment="v1.0&#10;frst worked, rdy to start beta">
-      <change afterPath="$PROJECT_DIR$/kivy_app.py" afterDir="false" />
+    <list default="true" id="988d1931-cfc2-494e-80a1-b4b095d58388" name="Changes" comment="v1.0.1&#10;worked:all_works, add_work&#10;at_plan:#for_sort_works, remove_works, saved_works, add_files...&#10;workd new .exe">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/http_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/http_server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sql_inections.py" beforeDir="false" afterPath="$PROJECT_DIR$/sql_inections.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -39,24 +37,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Python.app.executor": "Run",
-    "Python.app_flask.executor": "Run",
-    "Python.app_test.executor": "Run",
-    "Python.http_server.executor": "Run",
-    "Python.kivy_app.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.secret_keys.executor": "Run",
-    "Python.sql_inections.executor": "Run",
-    "Python.start_app_to_server.executor": "Run",
-    "Python.test.executor": "Run",
-    "Python.token_generate.executor": "Run",
-    "git-widget-placeholder": "master",
-    "settings.editor.selected.configurable": "project.propVCSSupport.CommitDialog"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Python.app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.app_flask.executor&quot;: &quot;Run&quot;,
+    &quot;Python.app_test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.http_server.executor&quot;: &quot;Run&quot;,
+    &quot;Python.kivy_app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.secret_keys.executor&quot;: &quot;Run&quot;,
+    &quot;Python.sql_inections.executor&quot;: &quot;Run&quot;,
+    &quot;Python.start_app_to_server.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.token_generate.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/mrgan/PycharmProjects/VideoDownloaderBot&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.CommitDialog&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Python.app">
     <configuration name="app" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="pythonProject" />
@@ -193,9 +192,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.app" />
+        <item itemvalue="Python.test" />
         <item itemvalue="Python.http_server" />
         <item itemvalue="Python.kivy_app" />
-        <item itemvalue="Python.test" />
         <item itemvalue="Python.sql_inections" />
       </list>
     </recent_temporary>
@@ -232,11 +231,28 @@
       <option name="project" value="LOCAL" />
       <updated>1723796612901</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="v1.0.1&#10;worked:all_works, add_work&#10;at_plan:#for_sort_works, remove_works, saved_works, add_files...&#10;workd new .exe">
+      <option name="closed" value="true" />
+      <created>1723803393297</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1723803393297</updated>
+    </task>
+    <task id="LOCAL-00004" summary="v1.0.1&#10;worked:all_works, add_work&#10;at_plan:#for_sort_works, remove_works, saved_works, add_files...&#10;workd new .exe">
+      <option name="closed" value="true" />
+      <created>1723803444079</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1723803444079</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="v1.0&#10;frst worked, rdy to start beta" />
-    <option name="LAST_COMMIT_MESSAGE" value="v1.0&#10;frst worked, rdy to start beta" />
+    <MESSAGE value="v1.0.1&#10;worked:all_works, add_work&#10;at_plan:#for_sort_works, remove_works, saved_works, add_files...&#10;workd new .exe" />
+    <option name="LAST_COMMIT_MESSAGE" value="v1.0.1&#10;worked:all_works, add_work&#10;at_plan:#for_sort_works, remove_works, saved_works, add_files...&#10;workd new .exe" />
   </component>
 </project>

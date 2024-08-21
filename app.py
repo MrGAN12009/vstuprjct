@@ -2,10 +2,10 @@ import sys
 import requests
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLineEdit, QPushButton, QLabel, QMessageBox,
-    QStackedWidget, QScrollArea, QMainWindow
+    QStackedWidget, QScrollArea, QMainWindow, QComboBox, QCheckBox
 )
-from PyQt5.QtGui import QPalette, QColor, QBrush, QLinearGradient, QPainterPath, QPainter
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtGui import QPalette, QColor, QBrush, QLinearGradient, QPainter, QIntValidator
+from PyQt5.QtCore import Qt
 
 username = ''
 jwt_token = ''
@@ -14,14 +14,16 @@ class GradientWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAutoFillBackground(True)
-        self.setPalette(QPalette(QColor(53, 53, 53)))
-        self.gradient = QLinearGradient(0, 0, 0, self.height())
-        self.gradient.setColorAt(0, QColor(25, 25, 25))
-        self.gradient.setColorAt(1, QColor(53, 53, 53))
+        palette = self.palette()
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        gradient.setColorAt(0, QColor(25, 25, 25))
+        gradient.setColorAt(1, QColor(53, 53, 53))
+        palette.setBrush(QPalette.Window, QBrush(gradient))
+        self.setPalette(palette)
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setBrush(QBrush(self.gradient))
+        painter.setBrush(self.palette().window())
         painter.drawRect(self.rect())
 
 class RoundedButton(QPushButton):
@@ -60,23 +62,19 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('Main Application')
         self.setFixedSize(400, 400)
 
-        # Create the stacked widget for managing screens
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
 
-        # Initialize screens
         self.login_form = LoginForm(self)
         self.register_form = RegisterForm(self)
         self.main_menu = MainMenu(self)
-        self.add_work_window = None  # To manage dynamic creation of "Add Work" screen
-        self.all_works_window = None  # To manage dynamic creation of "All works" screen
+        self.add_work_window = None
+        self.all_works_window = None
 
-        # Add screens to stacked widget
         self.stacked_widget.addWidget(self.login_form)
         self.stacked_widget.addWidget(self.register_form)
         self.stacked_widget.addWidget(self.main_menu)
 
-        # Set the initial screen
         self.stacked_widget.setCurrentWidget(self.login_form)
 
     def switch_to_register(self):
@@ -104,11 +102,11 @@ class MainWindow(QMainWindow):
         self.stacked_widget.setCurrentWidget(self.main_menu)
         if self.all_works_window is not None:
             self.stacked_widget.removeWidget(self.all_works_window)
-            self.all_works_window.deleteLater()  # Ensures proper memory management
+            self.all_works_window.deleteLater()
             self.all_works_window = None
         if self.add_work_window is not None:
             self.stacked_widget.removeWidget(self.add_work_window)
-            self.add_work_window.deleteLater()  # Ensures proper memory management
+            self.add_work_window.deleteLater()
             self.add_work_window = None
 
 class LoginForm(GradientWidget):
@@ -222,8 +220,49 @@ class AllWorksWindow(GradientWidget):
         super().__init__()
         self.main_window = main_window
 
+        self.teachers = ['Teacher 1', 'Teacher 2', 'Teacher 3']
+        self.predmets = ['Subject 1', 'Subject 2', 'Subject 3']
+
         layout = QVBoxLayout()
 
+        # Фильтры
+        self.teacher_input = QComboBox(self)
+        self.teacher_input.addItems(self.teachers)
+        self.teacher_input.setEditable(True)
+
+        self.course_input = RoundedLineEdit(self)
+        self.course_input.setPlaceholderText('Course')
+        self.course_input.setValidator(QIntValidator())
+
+        self.predmet_input = QComboBox(self)
+        self.predmet_input.addItems(self.predmets)
+        self.predmet_input.setEditable(True)
+
+        self.is_free_checkbox = QCheckBox('Free', self)
+
+        self.grade_input = RoundedLineEdit(self)
+        self.grade_input.setPlaceholderText('Grade')
+        self.grade_input.setValidator(QIntValidator())
+
+        self.apply_filters_button = RoundedButton('Apply Filters', self)
+        self.apply_filters_button.clicked.connect(self.load_work_buttons)
+
+        filter_layout = QVBoxLayout()
+        filter_layout.addWidget(QLabel('Teacher:', self))
+        filter_layout.addWidget(self.teacher_input)
+        filter_layout.addWidget(QLabel('Course:', self))
+        filter_layout.addWidget(self.course_input)
+        filter_layout.addWidget(QLabel('Subject:', self))
+        filter_layout.addWidget(self.predmet_input)
+        filter_layout.addWidget(QLabel('Free:', self))
+        filter_layout.addWidget(self.is_free_checkbox)
+        filter_layout.addWidget(QLabel('Grade:', self))
+        filter_layout.addWidget(self.grade_input)
+        filter_layout.addWidget(self.apply_filters_button)
+
+        layout.addLayout(filter_layout)
+
+        # Прокручиваемая область
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area_content = QWidget()
@@ -270,14 +309,17 @@ class WorkDetailsWindow(GradientWidget):
         self.main_window = main_window
 
         layout = QVBoxLayout()
-        title_label = QLabel(self.work['title'], self)
-        description_label = QLabel(self.work['text'], self)
+        layout.addWidget(QLabel(f"Username: {self.work['username']}", self))
+        layout.addWidget(QLabel(f"Title: {self.work['title']}", self))
+        layout.addWidget(QLabel(f"For Teacher: {self.work['forTeacher']}", self))
+        layout.addWidget(QLabel(f"Course: {self.work['course']}", self))
+        layout.addWidget(QLabel(f"Subject: {self.work['predmet']}", self))
+        layout.addWidget(QLabel(f"Grade: {self.work['grade']}", self))
+        layout.addWidget(QLabel(f"Text: {self.work['text']}", self))
 
         back_button = RoundedButton('Назад', self)
         back_button.clicked.connect(self.go_back)
 
-        layout.addWidget(title_label)
-        layout.addWidget(description_label)
         layout.addWidget(back_button)
         self.setLayout(layout)
 
@@ -286,108 +328,8 @@ class WorkDetailsWindow(GradientWidget):
         self.deleteLater()  # Ensures proper memory management
         self.main_window.show_all_works()
 
-class AddWorkWindow(GradientWidget):
-    def __init__(self, main_window):
-        super().__init__()
-        self.main_window = main_window
-
-        layout = QVBoxLayout()
-
-        # Поля для ввода данных
-        self.title_input = RoundedLineEdit(self)
-        self.title_input.setPlaceholderText('Title (макс. 45 символов)')
-        self.title_input.setMaxLength(45)
-
-        self.for_teacher_input = RoundedLineEdit(self)
-        self.for_teacher_input.setPlaceholderText('For Teacher (макс. 45 символов)')
-        self.for_teacher_input.setMaxLength(45)
-
-        self.course_input = RoundedLineEdit(self)
-        self.course_input.setPlaceholderText('Course (число)')
-
-        self.predmet_input = RoundedLineEdit(self)
-        self.predmet_input.setPlaceholderText('Predmet (макс. 45 символов)')
-        self.predmet_input.setMaxLength(45)
-
-        self.grade_input = RoundedLineEdit(self)
-        self.grade_input.setPlaceholderText('Grade (число)')
-
-        self.is_free_checkbox = RoundedButton('Is Free (Нажмите, если бесплатно)', self)
-        self.is_free_checkbox.setCheckable(True)
-
-        self.text_input = RoundedLineEdit(self)
-        self.text_input.setPlaceholderText('Text (макс. 500 символов)')
-        self.text_input.setMaxLength(500)
-
-        # Кнопка для отправки данных
-        self.submit_button = RoundedButton('Submit', self)
-        self.submit_button.clicked.connect(self.submit_work)
-
-        # Кнопка для возврата назад
-        self.back_button = RoundedButton('Назад', self)
-        self.back_button.clicked.connect(self.main_window.go_back_to_main_menu)
-
-        # Добавление всех элементов на макет
-        layout.addWidget(self.title_input)
-        layout.addWidget(self.for_teacher_input)
-        layout.addWidget(self.course_input)
-        layout.addWidget(self.predmet_input)
-        layout.addWidget(self.grade_input)
-        layout.addWidget(self.is_free_checkbox)
-        layout.addWidget(self.text_input)
-        layout.addWidget(self.submit_button)
-        layout.addWidget(self.back_button)
-        self.setLayout(layout)
-
-    def submit_work(self):
-        title = self.title_input.text()
-        for_teacher = self.for_teacher_input.text()
-        course = self.course_input.text()
-        predmet = self.predmet_input.text()
-        grade = self.grade_input.text()
-        is_free = self.is_free_checkbox.isChecked()
-        text = self.text_input.text()
-
-        data = {
-            'username': username,
-            'title': title,
-            'forTeacher': for_teacher,
-            'course': int(course) if course.isdigit() else 1,
-            'predmet': predmet,
-            'isFree': is_free,
-            'grade': int(grade) if grade.isdigit() else 1,
-            'text': text
-        }
-
-        try:
-            headers = {'Authorization': f'{jwt_token}', 'username': username}
-            response = requests.post('http://185.180.109.43:8000/new_work', json=data, headers=headers)
-            if response.status_code == 200:
-                QMessageBox.information(self, "Success", "Work added successfully!")
-                self.main_window.go_back_to_main_menu()
-            else:
-                QMessageBox.warning(self, "Error", "Failed to add work.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred: {e}")
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    app.setStyle('Fusion')
-
-    dark_palette = QPalette()
-    dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
-    dark_palette.setColor(QPalette.WindowText, Qt.white)
-    dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
-    dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-    dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
-    dark_palette.setColor(QPalette.ToolTipText, Qt.white)
-    dark_palette.setColor(QPalette.Text, Qt.white)
-    dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
-    dark_palette.setColor(QPalette.ButtonText, Qt.white)
-    dark_palette.setColor(QPalette.BrightText, Qt.red)
-    dark_palette.setColor(QPalette.Link, QColor(42, 130, 218))
-    app.setPalette(dark_palette)
-
-    window = MainWindow()
-    window.show()
+    main_window = MainWindow()
+    main_window.show()
     sys.exit(app.exec_())
